@@ -32,7 +32,12 @@ else
 endif
 }
 
-==S1== --> "Assign defined users on the MR" as assignMR
+==S1== --> if "found any assignees"
+  -down-> [true] "Assign defined users on the MR" as assignMR
+else
+  -down-> [false] (*)
+endif
+
 assignMR -down-> [Ending Process] (*)
 
 logErr -->[Ending Process] (*)
