@@ -1,0 +1,40 @@
+@startuml
+(*) --> "Check for root config"
+if "root config found and is valid"
+    -->[true] "Check for required merge request details" as checkMR
+else
+    -->[false] "log error" as logErr
+endif
+
+checkMR if "found details and are valid"
+    -->[true] "fetch remote target branch" as fetch
+else
+    -->[false] "log error" as logErr
+endif
+
+fetch -down-> "Compare source branch with target branch" as compare
+compare -down-> "filter for all directories with changes" as filter
+
+partition "Find all assignees"{
+filter -down-> "check if directory is repo root dir" as rootDir
+rootDir -down-> if "is rootDir"
+    -down-> [false]  "look for dispatch config in each dir" as look
+else
+    -down-> [true] "stop for this dir"
+endif
+
+look -down-> if "found dispatch config"
+    -down-> [true] "read, parse and add to in-mem store" as store
+    -down-> ==S1==
+else
+    -down-> [false] "go one directory up"
+    -down-> rootDir
+endif
+}
+
+==S1== --> "Assign defined users on the MR" as assignMR
+assignMR -down-> [Ending Process] (*)
+
+logErr -->[Ending Process] (*)
+
+@enduml

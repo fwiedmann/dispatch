@@ -13,3 +13,7 @@ This can be useful when:
 Correct MR assignment for the responsible unit/squad/team can be error prone. An automated process can minimize the risk of unwanted code changes and may help for better communication and code quality.
 
 ![mono-repo](./assets/mono-repo.png)
+
+## Flow
+
+![alternative text](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/fwiedmann/dispatch/main/flow.plantuml)
