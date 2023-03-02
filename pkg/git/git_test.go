@@ -12,7 +12,7 @@ import (
 )
 
 const sourceBranchName = "feat-187"
-const targetBranchName = "main"
+const targetBranchName = "master"
 
 func TestNewClientWithError(t *testing.T) {
 	// given when
@@ -49,52 +49,65 @@ func TestDirectoriesWithChanges(t *testing.T) {
 }
 
 func setUpTestRepo(t *testing.T, path string) {
-	// git init
+	// git init, will create default branch called 'master'
 	repo, err := giclient.PlainInit(path, false)
 	assert.Nil(t, err)
-
-	// create test file
-	assert.Nil(t, os.WriteFile(fmt.Sprintf("%s/%s", path, testFileName), []byte(testTargetBranchFileContent), 0777))
 
 	tree, err := repo.Worktree()
 	assert.Nil(t, err)
 
-	// git add
-	_, err = tree.Add(testFileName)
-	assert.Nil(t, err)
+	for _, dir := range testDirs {
+		createDir(t, tree, path, dir)
+		createFileAndCommit(t, tree, path, dir, testTargetBranchFileContent)
+	}
 
-	// git commit
-	_, err = tree.Commit("test", &giclient.CommitOptions{})
-	assert.Nil(t, err)
-
-	// create target branch
-	assert.Nil(t, tree.Checkout(&giclient.CheckoutOptions{
-		Branch: plumbing.ReferenceName(fmt.Sprintf("/refs/heads/%s", targetBranchName)),
-		Create: true,
-		Force:  true,
-		Keep:   true,
-	}))
-
-	// create source branch
-	assert.Nil(t, tree.Checkout(&giclient.CheckoutOptions{
-		Branch: plumbing.ReferenceName(fmt.Sprintf("/refs/heads/%s", sourceBranchName)),
-		Create: true,
-		Force:  true,
-		Keep:   true,
-	}))
-
-	// update file content
-	assert.Nil(t, os.WriteFile(fmt.Sprintf("%s/%s", path, testFileName), []byte(testSourceBranchFileContent), 0777))
+	// create test file
+	assert.Nil(t, os.WriteFile(fmt.Sprintf("%s/%s", path, testFileName), []byte(testTargetBranchFileContent), 0777))
 
 	// git add
 	_, err = tree.Add(testFileName)
 	assert.Nil(t, err)
 
 	// git commit
-	_, err = tree.Commit("test", &giclient.CommitOptions{})
+	_, err = tree.Commit("init commit", &giclient.CommitOptions{})
+	assert.Nil(t, err)
+
+	// create source/feature branch
+	assert.Nil(t, tree.Checkout(&giclient.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(sourceBranchName),
+		Create: true,
+		Force:  true,
+		Keep:   true,
+	}))
+
+	for _, dir := range testDirs {
+		createFileAndCommit(t, tree, path, dir, testSourceBranchFileContent)
+	}
+}
+
+func createDir(t *testing.T, tree *giclient.Worktree, testdir, subDir string) {
+	absoluteDirPath := fmt.Sprintf("%s/%s", testdir, subDir)
+	if err := os.Mkdir(absoluteDirPath, 0777); err != nil {
+		panic(err)
+	}
+}
+
+func createFileAndCommit(t *testing.T, tree *giclient.Worktree, testdir, subDir, content string) {
+	absoluteFilePath := fmt.Sprintf("%s/%s/%s", testdir, subDir, testFileName)
+	relativeFilePath := fmt.Sprintf("%s/%s", subDir, testFileName)
+
+	assert.Nil(t, os.WriteFile(absoluteFilePath, []byte(testSourceBranchFileContent), 0777))
+
+	_, err := tree.Add(relativeFilePath)
+	assert.Nil(t, err)
+
+	// git commit
+	_, err = tree.Commit("feat(file): cool new feature", &giclient.CommitOptions{})
 	assert.Nil(t, err)
 }
 
 const testFileName = "file.txt"
 const testSourceBranchFileContent = "changed"
 const testTargetBranchFileContent = "best feature ever"
+
+var testDirs []string = []string{"foo", "bar"}
