@@ -61,17 +61,6 @@ func setUpTestRepo(t *testing.T, path string) {
 		createFileAndCommit(t, tree, path, dir, testTargetBranchFileContent)
 	}
 
-	// create test file
-	assert.Nil(t, os.WriteFile(fmt.Sprintf("%s/%s", path, testFileName), []byte(testTargetBranchFileContent), 0777))
-
-	// git add
-	_, err = tree.Add(testFileName)
-	assert.Nil(t, err)
-
-	// git commit
-	_, err = tree.Commit("init commit", &giclient.CommitOptions{})
-	assert.Nil(t, err)
-
 	// create source/feature branch
 	assert.Nil(t, tree.Checkout(&giclient.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName(sourceBranchName),
@@ -96,7 +85,7 @@ func createFileAndCommit(t *testing.T, tree *giclient.Worktree, testdir, subDir,
 	absoluteFilePath := fmt.Sprintf("%s/%s/%s", testdir, subDir, testFileName)
 	relativeFilePath := fmt.Sprintf("%s/%s", subDir, testFileName)
 
-	assert.Nil(t, os.WriteFile(absoluteFilePath, []byte(testSourceBranchFileContent), 0777))
+	assert.Nil(t, os.WriteFile(absoluteFilePath, []byte(content), 0777))
 
 	_, err := tree.Add(relativeFilePath)
 	assert.Nil(t, err)

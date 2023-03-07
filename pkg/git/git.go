@@ -31,9 +31,6 @@ func NewClient(dir string, targetBranch string) (Client, error) {
 // DirectoriesWithChanges will compare the current Client repository with the Client targetBranch and returns all direcories which have changes.
 func (c Client) DirectoriesWithChanges() []string {
 
-	// TODO: check how to diff two branches, do we need compare two commits?
-	// TODO: check how to fetch and get target branch head
-
 	targetRef, err := c.repo.Reference(plumbing.NewBranchReferenceName(c.targetBranch), true)
 	if err != nil {
 		panic(err)
@@ -54,12 +51,14 @@ func (c Client) DirectoriesWithChanges() []string {
 		panic(err)
 	}
 
-	p, err := targetRefCommit.Patch(commit)
+	p, err := commit.Patch(targetRefCommit)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Print(p.FilePatches())
+	for _, diff := range p.FilePatches() {
+		fmt.Printf("%+v\n", diff)
+	}
 
 	return []string{}
 }
