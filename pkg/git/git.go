@@ -2,9 +2,9 @@
 package git
 
 import (
-	"github.com/go-git/go-git/plumbing/format/diff"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 // Client is an abstract git client for identifying directories which have changes aka git diffs
@@ -37,7 +37,7 @@ func (c Client) DirectoriesWithChanges() ([]string, error) {
 	return c.extractDirectories(diff), nil
 }
 
-func (c Client) diffBranches() ([]diff.FilePatch, error) {
+func (c Client) diffBranches() (*object.Patch, error) {
 	targetRef, err := c.repo.Reference(plumbing.NewBranchReferenceName(c.targetBranch), true)
 	if err != nil {
 		return nil, err
@@ -45,12 +45,12 @@ func (c Client) diffBranches() ([]diff.FilePatch, error) {
 
 	targetRefCommit, err := c.repo.CommitObject(targetRef.Hash())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	currentRef, err := c.repo.Head()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	currentRefCommit, err := c.repo.CommitObject(currentRef.Hash())
@@ -62,6 +62,6 @@ func (c Client) diffBranches() ([]diff.FilePatch, error) {
 }
 
 // TODO
-func (c Client) extractDirectories() []string {
+func (c Client) extractDirectories(diff *object.Patch) []string {
 	return []string{}
 }
