@@ -2,8 +2,7 @@
 package git
 
 import (
-	"fmt"
-
+	"github.com/go-git/go-git/plumbing/format/diff"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 )
@@ -29,36 +28,40 @@ func NewClient(dir string, targetBranch string) (Client, error) {
 }
 
 // DirectoriesWithChanges will compare the current Client repository with the Client targetBranch and returns all direcories which have changes.
-func (c Client) DirectoriesWithChanges() []string {
+func (c Client) DirectoriesWithChanges() ([]string, error) {
+	diff, err := c.diffBranches()
+	if err != nil {
+		return nil, err
+	}
 
+	return c.extractDirectories(diff), nil
+}
+
+func (c Client) diffBranches() ([]diff.FilePatch, error) {
 	targetRef, err := c.repo.Reference(plumbing.NewBranchReferenceName(c.targetBranch), true)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	targetRefCommit, err := c.repo.CommitObject(targetRef.Hash())
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	currentRef, err := c.repo.Head()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	commit, err := c.repo.CommitObject(currentRef.Hash())
+	currentRefCommit, err := c.repo.CommitObject(currentRef.Hash())
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	p, err := commit.Patch(targetRefCommit)
-	if err != nil {
-		panic(err)
-	}
+	return currentRefCommit.Patch(targetRefCommit)
+}
 
-	for _, diff := range p.FilePatches() {
-		fmt.Printf("%+v\n", diff)
-	}
-
+// TODO
+func (c Client) extractDirectories() []string {
 	return []string{}
 }
