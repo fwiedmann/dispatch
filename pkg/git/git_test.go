@@ -7,6 +7,7 @@ import (
 
 	"github.com/fwiedmann/dispatch/pkg/git"
 	giclient "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/stretchr/testify/assert"
 )
@@ -51,15 +52,29 @@ func TestDirectoriesWithChanges(t *testing.T) {
 func setUpTestRepo(t *testing.T, path string) {
 	// git init, will create default branch called 'master'
 	repo, err := giclient.PlainInit(path, false)
-	assert.Nil(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = repo.CreateRemote(&config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{"https://github.com/fwiedmann/does-not-exist"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	tree, err := repo.Worktree()
-	assert.Nil(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	for _, dir := range testDirs {
 		createDir(t, tree, path, dir)
 		createFileAndCommit(t, tree, path, dir, testTargetBranchFileContent)
 	}
+
+	createFakeRemote(t, repo, path)
 
 	// create source/feature branch
 	assert.Nil(t, tree.Checkout(&giclient.CheckoutOptions{
@@ -85,14 +100,44 @@ func createFileAndCommit(t *testing.T, tree *giclient.Worktree, testdir, subDir,
 	absoluteFilePath := fmt.Sprintf("%s/%s/%s", testdir, subDir, testFileName)
 	relativeFilePath := fmt.Sprintf("%s/%s", subDir, testFileName)
 
-	assert.Nil(t, os.WriteFile(absoluteFilePath, []byte(content), 0777))
+	err := os.WriteFile(absoluteFilePath, []byte(content), 0777)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	_, err := tree.Add(relativeFilePath)
-	assert.Nil(t, err)
+	_, err = tree.Add(relativeFilePath)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// git commit
 	_, err = tree.Commit("feat(file): cool new feature", &giclient.CommitOptions{})
-	assert.Nil(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func createFakeRemote(t *testing.T, repo *giclient.Repository, repoPath string) {
+	head, err := repo.Head()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = os.Mkdir(fmt.Sprintf("%s/.git/refs/remotes", repoPath), 0777)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = os.Mkdir(fmt.Sprintf("%s/.git/refs/remotes/origin", repoPath), 0777)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = os.WriteFile(fmt.Sprintf("%s/.git/refs/remotes/origin/%s", repoPath, targetBranchName), []byte(head.Hash().String()), 0777)
+
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 const testFileName = "file.txt"

@@ -7,6 +7,8 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
+const remoteName = "origin"
+
 // Client is an abstract git client for identifying directories which have changes aka git diffs
 type Client struct {
 	repo         *git.Repository
@@ -27,8 +29,13 @@ func NewClient(dir string, targetBranch string) (Client, error) {
 	}, nil
 }
 
-// DirectoriesWithChanges will compare the current Client repository with the Client targetBranch and returns all direcories which have changes.
+// DirectoriesWithChanges will compare the current Client repository
+// with the Client targetBranch and returns all direcories which have changes.
+// The targetBranch name will be used to get the HEAD reference from the remote.
+// Current default value for the remote name is 'origin'. If it is needed to change the remote name,
+// it should be part of the Client struct.
 func (c Client) DirectoriesWithChanges() ([]string, error) {
+
 	diff, err := c.diffBranches()
 	if err != nil {
 		return nil, err
@@ -38,7 +45,7 @@ func (c Client) DirectoriesWithChanges() ([]string, error) {
 }
 
 func (c Client) diffBranches() (*object.Patch, error) {
-	targetRef, err := c.repo.Reference(plumbing.NewBranchReferenceName(c.targetBranch), true)
+	targetRef, err := c.repo.Reference(plumbing.NewRemoteReferenceName(remoteName, c.targetBranch), true)
 	if err != nil {
 		return nil, err
 	}
