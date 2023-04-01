@@ -2,6 +2,8 @@
 package git
 
 import (
+	"path/filepath"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -68,7 +70,31 @@ func (c Client) diffBranches() (*object.Patch, error) {
 	return currentRefCommit.Patch(targetRefCommit)
 }
 
-// TODO
 func (c Client) extractDirectories(diff *object.Patch) []string {
-	return []string{}
+	if diff == nil || len(diff.FilePatches()) == 0 {
+		return []string{}
+	}
+
+	paths := make(map[string]any, len(diff.FilePatches()))
+
+	// TODO: handle root dir which is ""
+	for _, change := range diff.FilePatches() {
+		from, to := change.Files()
+
+		if from != nil {
+			paths[filepath.Dir(from.Path())] = ""
+		}
+
+		if to != nil {
+			paths[filepath.Dir(to.Path())] = ""
+		}
+
+	}
+
+	dirs := make([]string, len(paths))
+	for path := range paths {
+		dirs = append(dirs, path)
+	}
+
+	return dirs
 }

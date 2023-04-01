@@ -42,8 +42,7 @@ func TestDirectoriesWithChanges(t *testing.T) {
 	c, err := git.NewClient(testDir, targetBranchName)
 
 	// when
-
-	c.DirectoriesWithChanges()
+	t.Log(c.DirectoriesWithChanges())
 
 	// then
 	assert.Nil(t, err)
@@ -134,7 +133,7 @@ func createFakeRemote(t *testing.T, repo *giclient.Repository, repoPath string) 
 	}
 
 	err = os.WriteFile(fmt.Sprintf("%s/.git/refs/remotes/origin/%s", repoPath, targetBranchName), []byte(head.Hash().String()), 0777)
-
+	err = os.WriteFile(fmt.Sprintf("%s/.git/refs/remotes/origin/%s", repoPath, targetBranchName), []byte(head.Hash().String()), 0777)
 	if err != nil {
 		t.Fatal(err)
 	}
