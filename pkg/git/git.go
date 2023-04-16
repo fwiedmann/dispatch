@@ -10,6 +10,7 @@ import (
 )
 
 const remoteName = "origin"
+const rootPwdDir = "./"
 
 // Client is an abstract git client for identifying directories which have changes aka git diffs
 type Client struct {
@@ -77,16 +78,15 @@ func (c Client) extractDirectories(diff *object.Patch) []string {
 
 	paths := make(map[string]any, len(diff.FilePatches()))
 
-	// TODO: handle root dir which is ""
 	for _, change := range diff.FilePatches() {
 		from, to := change.Files()
 
 		if from != nil {
-			paths[filepath.Dir(from.Path())] = ""
+			paths[filepath.Dir(from.Path())] = rootPwdDir
 		}
 
 		if to != nil {
-			paths[filepath.Dir(to.Path())] = ""
+			paths[filepath.Dir(to.Path())] = rootPwdDir
 		}
 
 	}

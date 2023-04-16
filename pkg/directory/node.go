@@ -1,22 +1,37 @@
+// Package directory tbd.
 package directory
 
 import (
 	"errors"
-	"os"
+	"fmt"
 	"path/filepath"
 	"strings"
 )
 
-var InvalidPathError = errors.New("given path is absolute. Only relatives are allowed.")
-var NotADirectoryError = errors.New("given path does not point to a directory")
-var EmptyPathError = errors.New("given path input is empty")
+const rootPwdDir = "./"
 
+// ErrorInvalidPath error
+var ErrorInvalidPath = errors.New("given path is absolute. Only relatives are allowed")
+
+// ErrorEmptyPath error
+var ErrorEmptyPath = errors.New("given path input is empty")
+
+// NewNode inits a new root node
 func NewNode() *Node {
-	return &Node{}
+	return &Node{
+		name:         rootPwdDir,
+		relativePath: rootPwdDir,
+		depth:        1,
+	}
 }
 
+// Node represents a directory, relative from its parent directory
 type Node struct {
 	name string
+
+	relativePath string
+
+	depth int
 
 	fileFound bool
 
@@ -24,18 +39,21 @@ type Node struct {
 	childs []*Node
 }
 
+// Parent returns the parent Node of the current node.
+// If Node is nil the rootPwdDir is reached.
 func (n *Node) Parent() *Node {
-	if n.parent == nil {
-		return nil
-	}
-
 	return n.parent
 }
 
-func (n *Node) foundFile() {
+// FoundFile marks the Node that the searched file was found
+// This can be helpful during the bottom up traversal.
+// If a node is already marked, the traversal can be stopped.
+func (n *Node) FoundFile() {
 	n.fileFound = true
 }
 
+// AddDirectoryPath will update the Nodes tree for the given path.
+// The returned nodes represents the last sub directory of the given path
 func (n *Node) AddDirectoryPath(path string) (*Node, error) {
 	err := validatePath(path)
 	if err != nil {
@@ -47,20 +65,11 @@ func (n *Node) AddDirectoryPath(path string) (*Node, error) {
 
 func validatePath(path string) error {
 	if path == "" {
-		return EmptyPathError
+		return ErrorEmptyPath
 	}
 
 	if filepath.IsAbs(path) {
-		return InvalidPathError
-	}
-
-	stat, err := os.Stat(path)
-	if err != nil {
-		return err
-	}
-
-	if !stat.IsDir() {
-		return NotADirectoryError
+		return ErrorInvalidPath
 	}
 	return nil
 }
@@ -90,8 +99,10 @@ func (n *Node) add(dirNames []string) (*Node, error) {
 	}
 
 	newNode := &Node{
-		name:   dirName,
-		parent: n,
+		name:         dirName,
+		relativePath: builSubDirPath(n, dirName),
+		parent:       n,
+		depth:        n.depth + 1,
 	}
 
 	n.childs = append(n.childs, newNode)
@@ -105,4 +116,12 @@ func (n *Node) add(dirNames []string) (*Node, error) {
 
 func removeFirstDirName(dirNames []string) []string {
 	return dirNames[1:]
+}
+
+func builSubDirPath(n *Node, subDirName string) string {
+	formatString := "%s/%s"
+	if n.relativePath == rootPwdDir {
+		formatString = "%s%s"
+	}
+	return fmt.Sprintf(formatString, n.relativePath, subDirName)
 }
