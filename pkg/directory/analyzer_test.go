@@ -62,8 +62,8 @@ func TestAnalyzer_Analyze(t *testing.T) {
 	// given
 	codeOwners := []code.Info{
 		{
-			OwnerId: "team-1",
-			Name:    "team-1-service",
+			OwnerId:      "team-1",
+			LocationName: "team-1-service",
 		},
 	}
 
@@ -90,8 +90,8 @@ func TestAnalyzer_Analyze_should_fail(t *testing.T) {
 	// given
 	codeOwners := []code.Info{
 		{
-			OwnerId: "team-1",
-			Name:    "team-1-service",
+			OwnerId:      "team-1",
+			LocationName: "team-1-service",
 		},
 	}
 
