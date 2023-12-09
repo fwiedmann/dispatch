@@ -8,20 +8,22 @@ import (
 	"strings"
 )
 
-const rootPwdDir = "./"
-
-// ErrorInvalidPath error
-var ErrorInvalidPath = errors.New("given path is absolute. Only relatives are allowed")
+const RootPwdDir = "./"
 
 // ErrorEmptyPath error
 var ErrorEmptyPath = errors.New("given path input is empty")
 
 // NewNode inits a new root node
-func NewNode() *Node {
+func NewNode(startingPath string) *Node {
+	if startingPath != RootPwdDir {
+		startingPath = strings.TrimSuffix(startingPath, "/")
+	}
+
 	return &Node{
-		name:         rootPwdDir,
-		relativePath: rootPwdDir,
-		depth:        1,
+		name:     startingPath,
+		path:     startingPath,
+		rootPath: startingPath,
+		depth:    1,
 	}
 }
 
@@ -29,27 +31,21 @@ func NewNode() *Node {
 type Node struct {
 	name string
 
-	relativePath string
+	path     string
+	rootPath string
 
 	depth int
 
 	fileFound bool
 
-	parent *Node
-	childs []*Node
+	parent   *Node
+	children []*Node
 }
 
 // Parent returns the parent Node of the current node.
 // If Node is nil the rootPwdDir is reached.
 func (n *Node) Parent() *Node {
 	return n.parent
-}
-
-// FoundFile marks the Node that the searched file was found
-// This can be helpful during the bottom up traversal.
-// If a node is already marked, the traversal can be stopped.
-func (n *Node) FoundFile() {
-	n.fileFound = true
 }
 
 // AddDirectoryPath will update the Nodes tree for the given path.
@@ -60,6 +56,10 @@ func (n *Node) AddDirectoryPath(path string) (*Node, error) {
 		return nil, err
 	}
 
+	if filepath.IsAbs(path) {
+		path = strings.TrimPrefix(path, n.rootPath+"/")
+	}
+
 	return n.add(strings.Split(path, "/"))
 }
 
@@ -68,9 +68,6 @@ func validatePath(path string) error {
 		return ErrorEmptyPath
 	}
 
-	if filepath.IsAbs(path) {
-		return ErrorInvalidPath
-	}
 	return nil
 }
 
@@ -79,12 +76,12 @@ func (n *Node) add(dirNames []string) (*Node, error) {
 	isLastDirName := len(dirNames) == 1
 	dirName := dirNames[0]
 
-	if n.childs == nil {
-		n.childs = make([]*Node, 0)
+	if n.children == nil {
+		n.children = make([]*Node, 0)
 	}
 
 	var foundNode *Node
-	for _, presentNode := range n.childs {
+	for _, presentNode := range n.children {
 		if presentNode.name == dirName {
 			foundNode = presentNode
 			break
@@ -93,19 +90,21 @@ func (n *Node) add(dirNames []string) (*Node, error) {
 
 	if foundNode != nil {
 		if isLastDirName {
-			return foundNode, nil
+			// TODO: hier auch nill?
+			return nil, nil
 		}
 		return foundNode.add(removeFirstDirName(dirNames))
 	}
 
 	newNode := &Node{
-		name:         dirName,
-		relativePath: builSubDirPath(n, dirName),
-		parent:       n,
-		depth:        n.depth + 1,
+		name:     dirName,
+		path:     buildSubDirPath(n, dirName),
+		rootPath: n.rootPath,
+		parent:   n,
+		depth:    n.depth + 1,
 	}
 
-	n.childs = append(n.childs, newNode)
+	n.children = append(n.children, newNode)
 
 	if isLastDirName {
 		return newNode, nil
@@ -118,10 +117,10 @@ func removeFirstDirName(dirNames []string) []string {
 	return dirNames[1:]
 }
 
-func builSubDirPath(n *Node, subDirName string) string {
+func buildSubDirPath(n *Node, subDirName string) string {
 	formatString := "%s/%s"
-	if n.relativePath == rootPwdDir {
+	if n.path == RootPwdDir {
 		formatString = "%s%s"
 	}
-	return fmt.Sprintf(formatString, n.relativePath, subDirName)
+	return fmt.Sprintf(formatString, n.path, subDirName)
 }
