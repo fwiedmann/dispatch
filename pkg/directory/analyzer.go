@@ -44,6 +44,8 @@ func NewAnalyzer(rootPath string, paths []string, opts ...AnalyzerOption) (Analy
 
 	return *analyzer, nil
 }
+
+// Analyze with breadth first search for each child node (bottom -> up)
 func (a *Analyzer) Analyze() ([]code.Info, error) {
 	fileRefs := make([]string, 0)
 	for _, child := range a.childs {
@@ -78,7 +80,7 @@ func (a *Analyzer) analyzeChild(child *Node) *string {
 		if child.fileFound {
 			return nil
 		}
-		filename := a.relativeFileName(child.path)
+		filename := a.pathToSearchingFile(child.path)
 		_, err := os.Lstat(filename)
 		if err != nil {
 			child = child.parent
@@ -91,6 +93,6 @@ func (a *Analyzer) analyzeChild(child *Node) *string {
 	return nil
 }
 
-func (a *Analyzer) relativeFileName(path string) string {
+func (a *Analyzer) pathToSearchingFile(path string) string {
 	return fmt.Sprintf("%s/%s", path, a.searchedFileName)
 }
