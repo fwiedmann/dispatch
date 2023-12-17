@@ -2,6 +2,8 @@ package dispatch
 
 import "github.com/fwiedmann/dispatch/pkg/code"
 
+//go:generate mockgen -destination mock/mock_calltaker.go -package mocks -source calltaker.go
+
 func NewCallTaker(analyzer analyzer, dispatcher dispatcher, owners []code.Owner) CallTaker {
 	return CallTaker{
 		analyzer:   analyzer,
@@ -26,24 +28,24 @@ type dispatcher interface {
 
 // CallTaker orchestrates the analyzing and the correct dispatching
 type CallTaker struct {
-	analyzer
-	dispatcher
-	owners []code.Owner
+	analyzer   analyzer
+	dispatcher dispatcher
+	owners     []code.Owner
 }
 
-func (calltaker *CallTaker) Dispose() error {
-	ownerRefs, err := calltaker.Analyze()
+func (callTaker *CallTaker) Dispose() error {
+	ownerRefs, err := callTaker.analyzer.Analyze()
 	if err != nil {
 		return err
 	}
 
-	return calltaker.Dispatch(calltaker.findOwners(ownerRefs))
+	return callTaker.dispatcher.Dispatch(callTaker.findOwners(ownerRefs))
 }
 
-func (calltaker *CallTaker) findOwners(ownerRefs []code.Info) []Note {
+func (callTaker *CallTaker) findOwners(ownerRefs []code.Info) []Note {
 	notes := make([]Note, 0)
 	for _, ref := range ownerRefs {
-		for _, owner := range calltaker.owners {
+		for _, owner := range callTaker.owners {
 			if ref.OwnerId == owner.Id {
 				notes = append(notes, Note{
 					Info:  ref,

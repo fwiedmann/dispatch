@@ -10,16 +10,19 @@ This can be useful when:
 - units/squads/teams have their main code bases, but others will also adjust/enhance the code based on new requirements
 - It's a fast pacing environment, but code reviews by the main code owners is critical
 
-Correct MR assignment for the responsible unit/squad/team can be error prone. An automated process can minimize the risk of unwanted code changes and may help for better communication and code quality.
+Correct MR assignment for the responsible unit/squad/team can be error prone. An automated process can minimize the risk
+of unwanted code changes and may help for better communication and code quality.
 
 ![mono-repo](./assets/mono-repo.png)
 
 ## Goals
 
 - Correct approval assignment in terms of code responsibilities
-- With additional meta data, peers are able to identify the source and target aduience for the MRs (smth. like tags which are visible in the MR overview list)
+- With additional meta data, peers are able to identify the source and target aduience for the MRs (smth. like tags
+  which are visible in the MR overview list)
 - Do not remove already assigned peers
-- With categories it is possible to assign peers within a team to a specific kind of code base change. Like frontend or backend.
+- With categories it is possible to assign peers within a team to a specific kind of code base change. Like frontend or
+  backend.
 
 ### Not functional requirements
 
@@ -36,3 +39,13 @@ Correct MR assignment for the responsible unit/squad/team can be error prone. An
 ## Flow
 
 ![alternative text](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/fwiedmann/dispatch/main/flow.plantuml)
+
+## Code
+
+### Mocking
+
+Use `mockgen` for generating the mocks
+
+```bash
+go install go.uber.org/mock/mockgen@latest
+```
